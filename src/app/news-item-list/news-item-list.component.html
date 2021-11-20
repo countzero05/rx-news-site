@@ -1,0 +1,11 @@
+<div class="container">
+  <button class="btn btn-info" (click)="refreshData()">Refresh news</button>
+  <div class="col text-center"><h1>News: {{(newsObservable$ | async)?.title}}</h1></div>
+
+  <div class="table">
+    <div class="row" *ngFor="let newsItem of (newsObservable$ | async)?.newsItems">
+      <app-news-item (reorderItem)="reorderItem($event)" [item]="newsItem"></app-news-item>
+    </div>
+  </div>
+  <div>length: {{(newsObservable$ | async)?.newsItems?.length}}</div>
+</div>

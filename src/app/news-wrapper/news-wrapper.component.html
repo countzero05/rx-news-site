@@ -1,0 +1,6 @@
+<hr/>
+<div *ngIf="(currentCategoryNewsObservable$ | async)?.title">
+  <h1>News title: {{(currentCategoryNewsObservable$ | async)?.title}}</h1>
+</div>
+
+<router-outlet></router-outlet>

@@ -1,0 +1,9 @@
+<div class="row row-data" *ngIf="item">
+  <div class="col-1">{{item.id}}</div>
+  <div class="col-3">{{item.title}}</div>
+  <div class="col-6">{{item.description}}</div>
+  <div class="col-2">
+    <button (click)="clickHandler(item, 'up')" class="btn btn-primary" [disabled]="item.disabled">up</button>
+    <button (click)="clickHandler(item, 'down')" class="btn btn-primary" [disabled]="item.disabled">down</button>
+  </div>
+</div>
