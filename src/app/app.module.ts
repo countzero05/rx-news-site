@@ -9,6 +9,7 @@ import { NewsItemListComponent } from './news-item-list/news-item-list.component
 import { LandingPageComponent } from './landing-page/landing-page.component';
 import { HeaderComponent } from './header/header.component';
 import { NewsWrapperComponent } from './news-wrapper/news-wrapper.component';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 @NgModule( {
   declarations: [
@@ -23,6 +24,7 @@ import { NewsWrapperComponent } from './news-wrapper/news-wrapper.component';
     BrowserModule,
     AppRoutingModule,
     HttpClientModule,
+    BrowserAnimationsModule
   ],
   providers: [],
   bootstrap: [ AppComponent ]

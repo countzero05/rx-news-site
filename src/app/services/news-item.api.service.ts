@@ -18,6 +18,8 @@ export class NewsItemApiService {
     id: 0
   };
 
+  fetchRequested = 0;
+
   constructor() {
     this.newsData.title = chanceInstance.sentence({words: 5});
 
@@ -63,13 +65,17 @@ export class NewsItemApiService {
   }
 
   private createObservableResponse( id: number ): Observable<NewsDataModel<NewsItemModel>> {
+    this.fetchRequested++;
     return timer( Math.random() * 10 )
       .pipe(
         tap( () => {
           console.log( 'server requested' );
         } ),
         take( 1 ),
-        map( () => ( { ...this.newsData, id } ) )
+        map( () => ( {
+          newsItems: this.newsData.newsItems.map(item => ({...item})),
+          id,
+          title: `${this.newsData.title} (requested ${this.fetchRequested} times)` } ) )
       );
   }
 }

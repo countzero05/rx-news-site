@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
-import { merge, Observable, shareReplay, Subject } from "rxjs";
+import { merge, Observable, shareReplay, Subject, switchMap } from "rxjs";
 import { NewsDataModel, NewsItemModel, NewsItemModelTemplate } from "../models/news-item.model";
-import { concatMap, tap } from "rxjs/operators";
+import { concatMap, map, tap } from "rxjs/operators";
 import { NewsItemApiService } from "./news-item.api.service";
 
 @Injectable( {
@@ -36,7 +36,11 @@ export class NewsItemDataService {
 
   getCurrentCategoryReorderedNews( categoryId: number ): Observable<NewsDataModel<NewsItemModel>> {
     return this.reorderSubject$.pipe(
-      concatMap( ( identifiers ) => this.newsItemApiService.reorderItems( categoryId, identifiers[0], identifiers[1] ) ),
+      switchMap( ( identifiers ) => this.newsItemApiService.reorderItems( categoryId, identifiers[0], identifiers[1] ).pipe(
+        map(newsData => {
+          return {...newsData, reorderedIds: [...identifiers]}
+        }),
+      ) ),
       tap( () => {
         console.log( 'reorder observable requested' );
       } ),

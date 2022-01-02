@@ -1,5 +1,11 @@
 <div class="row row-data" *ngIf="item">
-  <div class="col-1">{{item.id}}</div>
+  <div
+    [@reorderedTrigger]="reordered"
+    (@reorderedTrigger.done)="doneAnimation()"
+    [ngClass]="{reordered}"
+    class="col-1">
+    {{item.id}}
+  </div>
   <div class="col-3">{{item.title}}</div>
   <div class="col-6">{{item.description}}</div>
   <div class="col-2">

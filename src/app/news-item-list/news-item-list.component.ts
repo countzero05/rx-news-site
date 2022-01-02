@@ -13,13 +13,10 @@ import { NewsItemDataService } from "../services/news-item.data.service";
   changeDetection: ChangeDetectionStrategy.OnPush
 } )
 export class NewsItemListComponent implements OnInit, OnDestroy {
+  newsObservable$?: Observable<NewsDataModel<NewsItemModelTemplate>>;
   private newsData?: NewsDataModel<NewsItemModelTemplate>;
-
   private destroyed$ = new Subject();
   private disableSubject$ = new Subject<{ newsData: NewsDataModel<NewsItemModelTemplate>, itemId: number }>();
-
-  newsObservable$?: Observable<NewsDataModel<NewsItemModelTemplate>>;
-
   private timerSubscription$?: Subscription;
   private newsSubscription$?: Subscription;
 
@@ -50,14 +47,39 @@ export class NewsItemListComponent implements OnInit, OnDestroy {
     this.destroyed$.complete();
   }
 
-  createNewsObservable(force = false) {
+  reorderItem( { item, direction }: { item: NewsItemModel, direction: string } ): void {
+    if ( !this.newsData ) {
+      return;
+    }
+    const { newsItems } = this.newsData;
+    const itemIndex = newsItems.findIndex( ( { id } ) => id === item.id );
+    const secondIndex = direction === 'up' ? itemIndex - 1 : itemIndex + 1;
+
+    if ( secondIndex < 0 || secondIndex >= newsItems.length ) {
+      console.error( 'Wrong item to reorder' );
+    }
+
+    this.newsItemDataService.reorderCurrentCategoryNewsItems( item.id, newsItems[secondIndex].id );
+  }
+
+  refreshData() {
+    this.newsItemDataService.fetchCurrentCategoryNews( this.currentNewsCategoryId, true );
+  }
+
+  private createNewsObservable( force = false ) {
     this.newsObservable$ = merge(
       this.newsItemDataService.getCategoryNews( this.currentNewsCategoryId, force ).pipe(
         map( newsData => this.disableExpiredNews( newsData ) ),
       ),
       this.getDisableObservable()
     ).pipe(
-      tap( ( newsData ) => this.createSubscriptionToDisableItem(newsData)),
+      tap( ( newsData ) => this.createSubscriptionToDisableItem( newsData ) ),
+      map( newsData => ( {
+          ...newsData, newsItems: newsData.newsItems.map( item =>
+            newsData.reorderedIds?.includes( item.id ) ? { ...item, reordered: true } : item
+          )
+        } )
+      ),
       share(),
       takeUntil( this.destroyed$ )
     );
@@ -67,7 +89,7 @@ export class NewsItemListComponent implements OnInit, OnDestroy {
     } );
   }
 
-  createSubscriptionToDisableItem(newsData: NewsDataModel<NewsItemModelTemplate>) {
+  private createSubscriptionToDisableItem( newsData: NewsDataModel<NewsItemModelTemplate> ) {
     if ( this.timerSubscription$ && !this.timerSubscription$.closed ) {
       console.log( 'unsubscribe based on new data incoming' );
       this.timerSubscription$.unsubscribe();
@@ -98,7 +120,7 @@ export class NewsItemListComponent implements OnInit, OnDestroy {
   private disableExpiredNews( newsData: NewsDataModel<NewsItemModel> ): NewsDataModel<NewsItemModelTemplate> {
     return {
       ...newsData,
-      newsItems: newsData.newsItems.map( (newsItem, index) => ( {
+      newsItems: newsData.newsItems.map( ( newsItem, index ) => ( {
         ...newsItem,
         disabled: index > newsData.newsItems.length * 0.6
       } ) )
@@ -112,30 +134,10 @@ export class NewsItemListComponent implements OnInit, OnDestroy {
       } ),
       map( ( { newsData, itemId } ) => {
         const itemIndex = newsData.newsItems.findIndex( item => item.id === itemId );
-        newsData.newsItems[itemIndex] = {...newsData.newsItems[itemIndex], disabled: true};
-        return newsData;
+        newsData.newsItems[itemIndex] = { ...newsData.newsItems[itemIndex], disabled: true };
+        return { ...newsData, reorderedIds: [] };
       } ),
       share()
     );
-  }
-
-  reorderItem( { item, direction }: { item: NewsItemModel, direction: string } ): void {
-    if (!this.newsData) {
-      return;
-    }
-    const { newsItems } = this.newsData;
-    const itemIndex = newsItems.findIndex( ( { id } ) => id === item.id );
-    const secondIndex = direction === 'up' ? itemIndex - 1 : itemIndex + 1;
-
-    if ( secondIndex < 0 || secondIndex >= newsItems.length ) {
-      console.error( 'Wrong item to reorder' );
-    }
-
-    this.newsItemDataService.reorderCurrentCategoryNewsItems( item.id, newsItems[secondIndex].id );
-  }
-
-  refreshData() {
-    this.newsSubscription$?.unsubscribe();
-    this.createNewsObservable(true);
   }
 }
