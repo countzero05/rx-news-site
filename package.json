@@ -10,7 +10,7 @@
   },
   "private": true,
   "engines": {
-    "node": ">=16.13.1"
+    "node": ">=14"
   },
   "dependencies": {
     "@angular/animations": "~13.0.0",
