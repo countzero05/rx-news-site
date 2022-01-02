@@ -63,7 +63,7 @@ export class NewsItemApiService {
   }
 
   private createObservableResponse( id: number ): Observable<NewsDataModel<NewsItemModel>> {
-    return timer( Math.random() * 1000 )
+    return timer( Math.random() * 10 )
       .pipe(
         tap( () => {
           console.log( 'server requested' );
