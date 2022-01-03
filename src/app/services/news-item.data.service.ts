@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { merge, Observable, shareReplay, Subject, switchMap } from "rxjs";
 import { NewsDataModel, NewsItemModel, NewsItemModelTemplate } from "../models/news-item.model";
-import { concatMap, map, tap } from "rxjs/operators";
+import { map, tap } from "rxjs/operators";
 import { NewsItemApiService } from "./news-item.api.service";
 
 @Injectable( {
@@ -9,6 +9,7 @@ import { NewsItemApiService } from "./news-item.api.service";
 } )
 export class NewsItemDataService {
   private reorderSubject$ = new Subject<[ id1: number, id2: number ]>();
+  private deleteSubject$ = new Subject<number>();
 
   private newsSubject = new Subject<NewsDataModel<NewsItemModel>>();
   private newsSubjectObservable = this.newsSubject.asObservable().pipe(
@@ -21,7 +22,7 @@ export class NewsItemDataService {
     private newsItemApiService: NewsItemApiService ) {
   }
 
-  fetchCurrentCategoryNews( categoryId: number, force = false ): Observable<NewsDataModel<NewsItemModel>> {
+  fetchCategoryNews( categoryId: number, force = false ): Observable<NewsDataModel<NewsItemModel>> {
     if ( this.couldUseCache( force, categoryId ) ) {
       return this.newsSubjectObservable;
     }
@@ -34,28 +35,48 @@ export class NewsItemDataService {
     return this.newsSubjectObservable;
   }
 
-  getCurrentCategoryReorderedNews( categoryId: number ): Observable<NewsDataModel<NewsItemModel>> {
+  getCategoryReorderedNews( categoryId: number ): Observable<NewsDataModel<NewsItemModel>> {
     return this.reorderSubject$.pipe(
-      switchMap( ( identifiers ) => this.newsItemApiService.reorderItems( categoryId, identifiers[0], identifiers[1] ).pipe(
-        map(newsData => {
-          return {...newsData, reorderedIds: [...identifiers]}
-        }),
-      ) ),
+      switchMap( ( identifiers ) => this.newsItemApiService.reorderItems( categoryId, identifiers[0], identifiers[1] )
+        .pipe(
+          map( newsData => {
+            return { ...newsData, lastReorderedIds: [ ...identifiers ] }
+          } ),
+        ) ),
       tap( () => {
         console.log( 'reorder observable requested' );
       } ),
     );
   }
 
-  getCategoryNews( categoryId: number, force = false ): Observable<NewsDataModel<NewsItemModelTemplate>> {
-    return merge(
-      this.fetchCurrentCategoryNews( categoryId, force ),
-      this.getCurrentCategoryReorderedNews( categoryId )
+  getCategoryDeletedNews( categoryId: number ): Observable<NewsDataModel<NewsItemModel>> {
+    return this.deleteSubject$.pipe(
+      switchMap( ( identifier ) => this.newsItemApiService.deleteItem( categoryId, identifier )
+        .pipe(
+          map( newsData => {
+            return { ...newsData, lastDeleted: identifier }
+          } ),
+        ) ),
+      tap( () => {
+        console.log( 'delete observable requested' );
+      } ),
     );
   }
 
-  reorderCurrentCategoryNewsItems( id1: number, id2: number ) {
+  getCategoryNews( categoryId: number, force = false ): Observable<NewsDataModel<NewsItemModelTemplate>> {
+    return merge(
+      this.fetchCategoryNews( categoryId, force ),
+      this.getCategoryReorderedNews( categoryId ),
+      this.getCategoryDeletedNews( categoryId )
+    );
+  }
+
+  reorderNewsItems( id1: number, id2: number ) {
     this.reorderSubject$.next( [ id1, id2 ] );
+  }
+
+  deleteNewsItem( id: number ) {
+    this.deleteSubject$.next( id );
   }
 
   private couldUseCache( force: boolean, categoryId: number ) {

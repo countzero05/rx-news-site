@@ -21,7 +21,7 @@ export class NewsWrapperComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.currentCategoryNewsObservable$ = this.newsItemDataService.fetchCurrentCategoryNews(+currentNewsCategoryId);
+    this.currentCategoryNewsObservable$ = this.newsItemDataService.fetchCategoryNews(+currentNewsCategoryId);
 
     this.currentCategoryNewsObservable$.pipe(takeUntil(this.destroy$)).subscribe(
       (newsData) => {

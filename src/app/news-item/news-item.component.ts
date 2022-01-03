@@ -8,7 +8,7 @@ import { animate, transition, trigger } from "@angular/animations";
   styleUrls: [ './news-item.component.scss' ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   animations: [
-    trigger( 'reorderedTrigger', [
+    trigger( 'highlightTrigger', [
         transition( 'void => true', [ animate( '5s' ) ] )
       ]
     )
@@ -18,25 +18,30 @@ export class NewsItemComponent implements OnInit, OnDestroy {
 
   @Input() item?: NewsItemModelTemplate;
   @Output() reorderItem = new EventEmitter<{ item: NewsItemModelTemplate, direction: string }>();
-  reordered = false;
+  @Output() deleteItem = new EventEmitter<{ item: NewsItemModelTemplate }>();
+  highlight = false;
 
   constructor() {
   }
 
   ngOnInit(): void {
-    this.reordered = !!this.item?.reordered;
+    this.highlight = !!this.item?.highlight;
   }
 
   ngOnDestroy() {
     // console.log('destroyed', this.item);
   }
 
-  clickHandler( item: NewsItemModel, direction: string ): void {
+  reorderClickHandler( item: NewsItemModel, direction: string ): void {
     this.reorderItem.emit( { item, direction } );
   }
 
+  deleteClickHandler( item: NewsItemModel ): void {
+    this.deleteItem.emit( { item } );
+  }
+
   doneAnimation() {
-    this.reordered = false;
+    this.highlight = false;
   }
 
 }

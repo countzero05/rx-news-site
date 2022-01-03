@@ -40,9 +40,9 @@ export class NewsItemApiService {
     );
   }
 
-  reorderItems( id: number, id1: number, id2: number ): Observable<NewsDataModel<NewsItemModel>> {
-    const item1Index = this.newsData.newsItems.findIndex( item => item.id === id1 );
-    const item2Index = this.newsData.newsItems.findIndex( item => item.id === id2 );
+  reorderItems( categoryId: number, item1Id: number, item2Id: number ): Observable<NewsDataModel<NewsItemModel>> {
+    const item1Index = this.newsData.newsItems.findIndex( item => item.id === item1Id );
+    const item2Index = this.newsData.newsItems.findIndex( item => item.id === item2Id );
 
     const item1 = this.newsData.newsItems[item1Index];
     const item2 = this.newsData.newsItems[item2Index];
@@ -52,14 +52,25 @@ export class NewsItemApiService {
       this.newsData.newsItems[item2Index] = item1;
     }
 
-    this.newsData = {
-      ...this.newsData,
-      newsItems: this.newsData.newsItems.map( newsItem => ( { ...newsItem } ) )
-    };
-
-    return this.createObservableResponse( id ).pipe(
+    return this.createObservableResponse( categoryId ).pipe(
       tap( () => {
         console.log( 'reorder requested' );
+      } ),
+    );
+  }
+
+  deleteItem( categoryId: number, itemId: number): Observable<NewsDataModel<NewsItemModel>> {
+    const itemIndex = this.newsData.newsItems.findIndex( item => item.id === itemId );
+
+    const item = this.newsData.newsItems[itemIndex];
+
+    if ( item ) {
+      this.newsData.newsItems[itemIndex].deleted = true;
+    }
+
+    return this.createObservableResponse( categoryId ).pipe(
+      tap( () => {
+        console.log( 'delete requested' );
       } ),
     );
   }

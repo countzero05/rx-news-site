@@ -39,6 +39,19 @@ export class NewsItemListComponent implements OnInit, OnDestroy {
     this.createNewsObservable();
   }
 
+  private get disableObservable$(): Observable<NewsDataModel<NewsItemModelTemplate>> {
+    return this.disableSubject$.pipe(
+      tap( () => {
+        console.log( 'disable observable requested' );
+      } ),
+      map( ( { newsData, itemId } ) => {
+        const itemIndex = newsData.newsItems.findIndex( item => item.id === itemId );
+        newsData.newsItems[itemIndex] = { ...newsData.newsItems[itemIndex], disabled: true };
+        return newsData;
+      } )
+    );
+  }
+
   ngOnInit(): void {
   }
 
@@ -59,34 +72,55 @@ export class NewsItemListComponent implements OnInit, OnDestroy {
       console.error( 'Wrong item to reorder' );
     }
 
-    this.newsItemDataService.reorderCurrentCategoryNewsItems( item.id, newsItems[secondIndex].id );
+    this.newsItemDataService.reorderNewsItems( item.id, newsItems[secondIndex].id );
+  }
+
+  deleteItem( { item }: { item: NewsItemModel } ): void {
+    if ( !this.newsData ) {
+      return;
+    }
+
+    this.newsItemDataService.deleteNewsItem( item.id );
   }
 
   refreshData() {
-    this.newsItemDataService.fetchCurrentCategoryNews( this.currentNewsCategoryId, true );
+    this.newsItemDataService.fetchCategoryNews( this.currentNewsCategoryId, true );
   }
 
   private createNewsObservable( force = false ) {
     this.newsObservable$ = merge(
-      this.newsItemDataService.getCategoryNews( this.currentNewsCategoryId, force ).pipe(
-        map( newsData => this.disableExpiredNews( newsData ) ),
-      ),
-      this.getDisableObservable()
+      this.newsItemDataService.getCategoryNews( this.currentNewsCategoryId, force )
+        .pipe(
+          map( newsData => this.disableExpiredNews( newsData ) ),
+        ),
+      this.disableObservable$.pipe(
+        map( ( newsData ) => ( { ...newsData, lastReorderedIds: <number[]>[] } ) ),
+        map( ( newsData ) => ( { ...newsData, lastDeleted: undefined } ) ),
+      )
     ).pipe(
-      tap( ( newsData ) => this.createSubscriptionToDisableItem( newsData ) ),
-      map( newsData => ( {
-          ...newsData, newsItems: newsData.newsItems.map( item =>
-            newsData.reorderedIds?.includes( item.id ) ? { ...item, reordered: true } : item
-          )
-        } )
-      ),
+      tap( this.createSubscriptionToDisableItem.bind( this ) ),
+      map( this.highlightItems.bind( this ) ),
       share(),
       takeUntil( this.destroyed$ )
     );
 
     this.newsSubscription$ = this.newsObservable$.subscribe( newsData => {
+      console.log(newsData);
       this.newsData = newsData;
     } );
+  }
+
+  private highlightItems( newsData: NewsDataModel<NewsItemModelTemplate> ) {
+    return ( {
+      ...newsData,
+      newsItems: newsData.newsItems.map( item =>
+        this.couldHighlight( newsData, item ) ? { ...item, highlight: true } : item
+      )
+    } );
+  }
+
+  private couldHighlight( newsData: NewsDataModel<NewsItemModelTemplate>, item: NewsItemModelTemplate ) {
+    return newsData.lastReorderedIds?.includes( item.id ) || newsData.lastDeleted === item.id;
   }
 
   private createSubscriptionToDisableItem( newsData: NewsDataModel<NewsItemModelTemplate> ) {
@@ -106,7 +140,7 @@ export class NewsItemListComponent implements OnInit, OnDestroy {
     // find out timer interval to check item to be disabled based on some extra logic
     const timerInterval = 3000 + ~~( Math.random() * 5000 );
 
-    this.timerSubscription$ = timer( timerInterval )
+    this.timerSubscription$ = timer( timerInterval ).pipe( takeUntil( this.destroyed$ ) )
       .subscribe( () => {
         // find out some item id to disabled by some extra logic
         const itemsToDisable = newsData.newsItems.filter( item => !item.disabled );
@@ -125,19 +159,5 @@ export class NewsItemListComponent implements OnInit, OnDestroy {
         disabled: index > newsData.newsItems.length * 0.6
       } ) )
     }
-  }
-
-  private getDisableObservable(): Observable<NewsDataModel<NewsItemModelTemplate>> {
-    return this.disableSubject$.pipe(
-      tap( () => {
-        console.log( 'disable observable requested' );
-      } ),
-      map( ( { newsData, itemId } ) => {
-        const itemIndex = newsData.newsItems.findIndex( item => item.id === itemId );
-        newsData.newsItems[itemIndex] = { ...newsData.newsItems[itemIndex], disabled: true };
-        return { ...newsData, reorderedIds: [] };
-      } ),
-      share()
-    );
   }
 }

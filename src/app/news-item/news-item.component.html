@@ -1,15 +1,31 @@
-<div class="row row-data" *ngIf="item">
+<div
+  class="row row-data border"
+  *ngIf="item"
+  [@highlightTrigger]="highlight"
+  (@highlightTrigger.done)="doneAnimation()"
+  [ngClass]="{'border-success': highlight}"
+>
   <div
-    [@reorderedTrigger]="reordered"
-    (@reorderedTrigger.done)="doneAnimation()"
-    [ngClass]="{reordered}"
     class="col-1">
     {{item.id}}
   </div>
   <div class="col-3">{{item.title}}</div>
   <div class="col-6">{{item.description}}</div>
   <div class="col-2">
-    <button (click)="clickHandler(item, 'up')" class="btn btn-primary" [disabled]="item.disabled">up</button>
-    <button (click)="clickHandler(item, 'down')" class="btn btn-primary" [disabled]="item.disabled">down</button>
+    <button (click)="reorderClickHandler(item, 'up')"
+            class="btn btn-outline-primary"
+            [disabled]="item.disabled || item.deleted">
+      <i class="bi bi-arrow-up"></i>
+    </button>
+    <button (click)="reorderClickHandler(item, 'down')"
+            class="btn btn-outline-primary"
+            [disabled]="item.disabled || item.deleted">
+      <i class="bi bi-arrow-down"></i>
+    </button>
+    <button (click)="deleteClickHandler(item)"
+            class="btn btn-outline-danger"
+            [disabled]="item.disabled || item.deleted">
+      <i class="bi bi-bucket"></i>
+    </button>
   </div>
 </div>

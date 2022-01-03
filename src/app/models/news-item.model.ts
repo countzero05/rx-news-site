@@ -2,7 +2,8 @@ export interface NewsItemModel {
   id: number;
   title: string;
   description: string;
-  reordered?: boolean;
+  highlight?: boolean;
+  deleted?: boolean;
 }
 
 export interface NewsItemModelTemplate extends NewsItemModel {
@@ -13,5 +14,6 @@ export interface NewsDataModel<T> {
   id: number;
   title: string;
   newsItems: T[];
-  reorderedIds?: Array<number>
+  lastReorderedIds?: Array<number>;
+  lastDeleted?: number;
 }
