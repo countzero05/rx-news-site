@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, OnDestroy, OnInit } from '@angular/core';
 import { NewsItemApiService } from "../services/news-item.api.service";
 import { NewsDataModel, NewsItemModel, NewsItemModelTemplate } from "../models/news-item.model";
-import { merge, Observable, Subject, Subscription, takeUntil, timer } from "rxjs";
+import { merge, Observable, Subject, switchMap, takeUntil, timer } from "rxjs";
 import { map, share, tap } from "rxjs/operators";
 import { ActivatedRoute } from "@angular/router";
 import { NewsItemDataService } from "../services/news-item.data.service";
@@ -16,9 +16,7 @@ export class NewsItemListComponent implements OnInit, OnDestroy {
   newsObservable$?: Observable<NewsDataModel<NewsItemModelTemplate>>;
   private newsData?: NewsDataModel<NewsItemModelTemplate>;
   private destroyed$ = new Subject();
-  private disableSubject$ = new Subject<{ newsData: NewsDataModel<NewsItemModelTemplate>, itemId: number }>();
-  private timerSubscription$?: Subscription;
-  private newsSubscription$?: Subscription;
+  private expireSubject$ = new Subject<{ newsData: NewsDataModel<NewsItemModelTemplate>, itemId: number }>();
 
   private currentNewsCategoryId!: number;
 
@@ -36,13 +34,17 @@ export class NewsItemListComponent implements OnInit, OnDestroy {
 
     this.currentNewsCategoryId = +currentNewsCategoryId;
 
-    this.createNewsObservable();
+    this.newsObservable$ = this.createNewsObservable();
+
+    this.newsObservable$.subscribe( newsData => {
+      this.newsData = newsData;
+    } );
   }
 
-  private get disableObservable$(): Observable<NewsDataModel<NewsItemModelTemplate>> {
-    return this.disableSubject$.pipe(
+  private get expiredObservable$(): Observable<NewsDataModel<NewsItemModelTemplate>> {
+    return this.expireSubject$.pipe(
       tap( () => {
-        console.log( 'disable observable requested' );
+        console.log( 'expired observable requested' );
       } ),
       map( ( { newsData, itemId } ) => {
         const itemIndex = newsData.newsItems.findIndex( item => item.id === itemId );
@@ -70,16 +72,13 @@ export class NewsItemListComponent implements OnInit, OnDestroy {
 
     if ( secondIndex < 0 || secondIndex >= newsItems.length ) {
       console.error( 'Wrong item to reorder' );
+      return;
     }
 
     this.newsItemDataService.reorderNewsItems( item.id, newsItems[secondIndex].id );
   }
 
   deleteItem( { item }: { item: NewsItemModel } ): void {
-    if ( !this.newsData ) {
-      return;
-    }
-
     this.newsItemDataService.deleteNewsItem( item.id );
   }
 
@@ -87,67 +86,60 @@ export class NewsItemListComponent implements OnInit, OnDestroy {
     this.newsItemDataService.fetchCategoryNews( this.currentNewsCategoryId, true );
   }
 
-  private createNewsObservable( force = false ) {
-    this.newsObservable$ = merge(
-      this.newsItemDataService.getCategoryNews( this.currentNewsCategoryId, force )
+  private createNewsObservable() {
+    const baseObservable$ = merge(
+      this.newsItemDataService.getCategoryNews( this.currentNewsCategoryId )
         .pipe(
-          map( newsData => this.disableExpiredNews( newsData ) ),
+          map( this.disableExpiredNews.bind( this ) ),
         ),
-      this.disableObservable$.pipe(
-        map( ( newsData ) => ( { ...newsData, lastReorderedIds: <number[]>[] } ) ),
-        map( ( newsData ) => ( { ...newsData, lastDeleted: undefined } ) ),
-      )
+      this.expiredObservable$
     ).pipe(
-      tap( this.createSubscriptionToDisableItem.bind( this ) ),
-      map( this.highlightItems.bind( this ) ),
       share(),
-      takeUntil( this.destroyed$ )
-    );
+    )
 
-    this.newsSubscription$ = this.newsObservable$.subscribe( newsData => {
-      console.log(newsData);
-      this.newsData = newsData;
-    } );
+    baseObservable$
+      .pipe(
+        takeUntil( this.destroyed$ ),
+        switchMap( this.createExpireTimer.bind( this ) )
+      ).subscribe();
+
+    return baseObservable$
+      .pipe(
+        takeUntil( this.destroyed$ ),
+        map( this.highlightItems.bind( this ) ),
+      );
+  }
+
+  private createExpireTimer( newsData: NewsDataModel<NewsItemModelTemplate> ) {
+    const timerInterval = 3000 + ~~( Math.random() * 5000 );
+    return timer( timerInterval ).pipe(
+      takeUntil( this.destroyed$ ),
+      tap( () => {
+        if ( !newsData.newsItems.some( item => !item.disabled ) ) {
+          console.info( 'there is no more items to expire' );
+          return;
+        }
+        const itemsToExpire = newsData.newsItems.filter( item => !item.disabled );
+        const itemToExpireIndex = ~~( Math.random() * ( itemsToExpire.length - 1 ) );
+        const itemId = itemsToExpire[itemToExpireIndex].id;
+        this.expireSubject$.next( { newsData, itemId } );
+      } ),
+    )
   }
 
   private highlightItems( newsData: NewsDataModel<NewsItemModelTemplate> ) {
     return ( {
       ...newsData,
-      newsItems: newsData.newsItems.map( item =>
-        this.couldHighlight( newsData, item ) ? { ...item, highlight: true } : item
+      newsItems: newsData.newsItems.map( item => {
+          item.highlight = this.couldHighlight( newsData, item );
+          return item;
+        }
       )
     } );
   }
 
   private couldHighlight( newsData: NewsDataModel<NewsItemModelTemplate>, item: NewsItemModelTemplate ) {
     return newsData.lastReorderedIds?.includes( item.id ) || newsData.lastDeleted === item.id;
-  }
-
-  private createSubscriptionToDisableItem( newsData: NewsDataModel<NewsItemModelTemplate> ) {
-    if ( this.timerSubscription$ && !this.timerSubscription$.closed ) {
-      console.log( 'unsubscribe based on new data incoming' );
-      this.timerSubscription$.unsubscribe();
-      this.timerSubscription$ = undefined;
-    }
-
-    // check if something still exists to disable
-    // if nothing do not run timer
-    if ( !newsData.newsItems.some( item => !item.disabled ) ) {
-      console.info( 'there is no more items to disable' );
-      return;
-    }
-
-    // find out timer interval to check item to be disabled based on some extra logic
-    const timerInterval = 3000 + ~~( Math.random() * 5000 );
-
-    this.timerSubscription$ = timer( timerInterval ).pipe( takeUntil( this.destroyed$ ) )
-      .subscribe( () => {
-        // find out some item id to disabled by some extra logic
-        const itemsToDisable = newsData.newsItems.filter( item => !item.disabled );
-        const itemToDisableIndex = ~~( Math.random() * ( itemsToDisable.length - 1 ) );
-        const itemId = itemsToDisable[itemToDisableIndex].id;
-        this.disableSubject$.next( { newsData, itemId } );
-      } )
   }
 
   // her we will disable news items by some extra logic

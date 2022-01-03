@@ -39,10 +39,9 @@ export class NewsItemDataService {
     return this.reorderSubject$.pipe(
       switchMap( ( identifiers ) => this.newsItemApiService.reorderItems( categoryId, identifiers[0], identifiers[1] )
         .pipe(
-          map( newsData => {
-            return { ...newsData, lastReorderedIds: [ ...identifiers ] }
-          } ),
-        ) ),
+          map( newsData => ( { ...newsData, lastReorderedIds: [ ...identifiers ] } ) ),
+        )
+      ),
       tap( () => {
         console.log( 'reorder observable requested' );
       } ),

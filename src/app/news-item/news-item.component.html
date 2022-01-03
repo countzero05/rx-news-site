@@ -3,7 +3,7 @@
   *ngIf="item"
   [@highlightTrigger]="highlight"
   (@highlightTrigger.done)="doneAnimation()"
-  [ngClass]="{'border-success': highlight}"
+  [ngClass]="{'border-success': highlight, 'border-warning': item.disabled || item.deleted}"
 >
   <div
     class="col-1">
