@@ -2,15 +2,15 @@ import { TestBed } from '@angular/core/testing';
 
 import { NewsItemApiService } from './news-item.api.service';
 
-describe('NewsItemService', () => {
+describe( 'NewsItemService', () => {
   let service: NewsItemApiService;
 
-  beforeEach(() => {
-    TestBed.configureTestingModule({});
-    service = TestBed.inject(NewsItemApiService);
-  });
+  beforeEach( () => {
+    TestBed.configureTestingModule( {} );
+    service = TestBed.inject( NewsItemApiService );
+  } );
 
-  it('should be created', () => {
-    expect(service).toBeTruthy();
-  });
-});
+  it( 'should be created', () => {
+    expect( service ).toBeTruthy();
+  } );
+} );

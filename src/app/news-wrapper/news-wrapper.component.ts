@@ -1,19 +1,19 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { NewsDataModel, NewsItemModel } from "../models/news-item.model";
-import { Observable, Subject, Subscription, takeUntil, tap } from "rxjs";
+import { Observable, Subject, takeUntil } from "rxjs";
 import { NewsItemDataService } from "../services/news-item.data.service";
 import { ActivatedRoute } from "@angular/router";
 
-@Component({
+@Component( {
   selector: 'app-news-wrapper',
   templateUrl: './news-wrapper.component.html',
-  styleUrls: ['./news-wrapper.component.scss']
-})
+  styleUrls: [ './news-wrapper.component.scss' ]
+} )
 export class NewsWrapperComponent implements OnInit, OnDestroy {
-  currentCategoryNewsObservable$: Observable<NewsDataModel<NewsItemModel>> = new Observable<NewsDataModel<NewsItemModel>>();
+  currentCategoryNewsObservable$ = new Observable<NewsDataModel>();
   destroy$ = new Subject();
 
-  constructor(private newsItemDataService: NewsItemDataService, private activatedRoute: ActivatedRoute) {
+  constructor( private newsItemDataService: NewsItemDataService, private activatedRoute: ActivatedRoute ) {
     const currentNewsCategoryId = this.activatedRoute.snapshot.paramMap.get( 'newsCategoryId' );
 
     if ( !currentNewsCategoryId ) {
@@ -21,20 +21,20 @@ export class NewsWrapperComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.currentCategoryNewsObservable$ = this.newsItemDataService.fetchCategoryNews(+currentNewsCategoryId);
+    this.currentCategoryNewsObservable$ = this.newsItemDataService.getCachedNews( +currentNewsCategoryId );
 
-    this.currentCategoryNewsObservable$.pipe(takeUntil(this.destroy$)).subscribe(
-      (newsData) => {
-        console.log('fetch news data', newsData);
+    this.currentCategoryNewsObservable$.pipe( takeUntil( this.destroy$ ) ).subscribe(
+      ( newsData ) => {
+        console.log( 'fetch news data', newsData );
 
-      })
+      } )
   }
 
   ngOnInit(): void {
   }
 
   ngOnDestroy() {
-    this.destroy$.next(true);
+    this.destroy$.next( true );
     this.destroy$.complete();
   }
 

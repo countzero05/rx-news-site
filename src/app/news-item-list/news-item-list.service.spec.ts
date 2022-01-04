@@ -1,13 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 
-import { NewsItemDataService } from './news-item.data.service';
+import { NewsItemListService } from './news-item-list.service';
 
-describe( 'NewsItem.DataService', () => {
-  let service: NewsItemDataService;
+describe( 'NewsItemListService', () => {
+  let service: NewsItemListService;
 
   beforeEach( () => {
     TestBed.configureTestingModule( {} );
-    service = TestBed.inject( NewsItemDataService );
+    service = TestBed.inject( NewsItemListService );
   } );
 
   it( 'should be created', () => {

@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
-import { NewsItemModel, NewsItemModelTemplate } from "../models/news-item.model";
 import { animate, transition, trigger } from "@angular/animations";
+import { NewsItemModelTemplate } from "../new-item-template.model";
 
 @Component( {
   selector: 'app-news-item',
@@ -32,11 +32,11 @@ export class NewsItemComponent implements OnInit, OnDestroy {
     // console.log('destroyed', this.item);
   }
 
-  reorderClickHandler( item: NewsItemModel, direction: string ): void {
+  reorderClickHandler( item: NewsItemModelTemplate, direction: string ): void {
     this.reorderItem.emit( { item, direction } );
   }
 
-  deleteClickHandler( item: NewsItemModel ): void {
+  deleteClickHandler( item: NewsItemModelTemplate ): void {
     this.deleteItem.emit( { item } );
   }
 

@@ -2,18 +2,11 @@ export interface NewsItemModel {
   id: number;
   title: string;
   description: string;
-  highlight?: boolean;
   deleted?: boolean;
 }
 
-export interface NewsItemModelTemplate extends NewsItemModel {
-  disabled?: boolean;
-}
-
-export interface NewsDataModel<T> {
+export interface NewsDataModel {
   id: number;
   title: string;
-  newsItems: T[];
-  lastReorderedIds?: Array<number>;
-  lastDeleted?: number;
+  newsItems: NewsItemModel[];
 }

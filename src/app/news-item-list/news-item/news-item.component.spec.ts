@@ -2,24 +2,24 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { NewsItemComponent } from './news-item.component';
 
-describe('NewsItemComponent', () => {
+describe( 'NewsItemComponent', () => {
   let component: NewsItemComponent;
   let fixture: ComponentFixture<NewsItemComponent>;
 
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
+  beforeEach( async () => {
+    await TestBed.configureTestingModule( {
       declarations: [ NewsItemComponent ]
-    })
-    .compileComponents();
-  });
+    } )
+      .compileComponents();
+  } );
 
-  beforeEach(() => {
-    fixture = TestBed.createComponent(NewsItemComponent);
+  beforeEach( () => {
+    fixture = TestBed.createComponent( NewsItemComponent );
     component = fixture.componentInstance;
     fixture.detectChanges();
-  });
+  } );
 
-  it('should create', () => {
-    expect(component).toBeTruthy();
-  });
-});
+  it( 'should create', () => {
+    expect( component ).toBeTruthy();
+  } );
+} );

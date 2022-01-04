@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 // import { lorem as fakerLorem, name as fakerName } from 'faker';
-import { NewsDataModel, NewsItemModel } from "../models/news-item.model";
+import { NewsDataModel } from "../models/news-item.model";
 import { Observable, take, tap, timer } from "rxjs";
 import { map } from "rxjs/operators";
 import * as chance from 'chance';
@@ -12,7 +12,7 @@ const chanceInstance = chance.Chance();
   providedIn: 'root'
 } )
 export class NewsItemApiService {
-  newsData: NewsDataModel<NewsItemModel> = {
+  newsData: NewsDataModel = {
     newsItems: [],
     title: '',
     id: 0
@@ -21,18 +21,18 @@ export class NewsItemApiService {
   fetchRequested = 0;
 
   constructor() {
-    this.newsData.title = chanceInstance.sentence({words: 5});
+    this.newsData.title = chanceInstance.sentence( { words: 5 } );
 
     for ( let i = 0; i < itemsCount; i++ ) {
       this.newsData.newsItems.push( {
         id: i + 1,
-        title: chanceInstance.sentence({words: 5}),
-        description: chanceInstance.paragraph({ sentences: 2 })
+        title: chanceInstance.sentence( { words: 5 } ),
+        description: chanceInstance.paragraph( { sentences: 2 } )
       } )
     }
   }
 
-  getNewsItems( id: number ): Observable<NewsDataModel<NewsItemModel>> {
+  getNewsItems( id: number ): Observable<NewsDataModel> {
     return this.createObservableResponse( id ).pipe(
       tap( () => {
         console.log( 'fetch requested' );
@@ -40,7 +40,7 @@ export class NewsItemApiService {
     );
   }
 
-  reorderItems( categoryId: number, item1Id: number, item2Id: number ): Observable<NewsDataModel<NewsItemModel>> {
+  reorderItems( categoryId: number, item1Id: number, item2Id: number ): Observable<NewsDataModel> {
     const item1Index = this.newsData.newsItems.findIndex( item => item.id === item1Id );
     const item2Index = this.newsData.newsItems.findIndex( item => item.id === item2Id );
 
@@ -59,7 +59,7 @@ export class NewsItemApiService {
     );
   }
 
-  deleteItem( categoryId: number, itemId: number): Observable<NewsDataModel<NewsItemModel>> {
+  deleteItem( categoryId: number, itemId: number ): Observable<NewsDataModel> {
     const itemIndex = this.newsData.newsItems.findIndex( item => item.id === itemId );
 
     const item = this.newsData.newsItems[itemIndex];
@@ -75,7 +75,7 @@ export class NewsItemApiService {
     );
   }
 
-  private createObservableResponse( id: number ): Observable<NewsDataModel<NewsItemModel>> {
+  private createObservableResponse( id: number ): Observable<NewsDataModel> {
     this.fetchRequested++;
     return timer( Math.random() * 10 )
       .pipe(
@@ -84,9 +84,10 @@ export class NewsItemApiService {
         } ),
         take( 1 ),
         map( () => ( {
-          newsItems: this.newsData.newsItems.map(item => ({...item})),
+          newsItems: this.newsData.newsItems.map( item => ( { ...item } ) ),
           id,
-          title: `${this.newsData.title} (requested ${this.fetchRequested} times)` } ) )
+          title: `${this.newsData.title} (requested ${this.fetchRequested} times)`
+        } ) )
       );
   }
 }

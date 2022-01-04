@@ -1,9 +1,9 @@
 <div
-  class="row row-data border"
+  (@highlightTrigger.done)="doneAnimation()"
   *ngIf="item"
   [@highlightTrigger]="highlight"
-  (@highlightTrigger.done)="doneAnimation()"
   [ngClass]="{'border-success': highlight, 'border-warning': item.disabled || item.deleted}"
+  class="row row-data border"
 >
   <div
     class="col-1">
@@ -13,18 +13,18 @@
   <div class="col-6">{{item.description}}</div>
   <div class="col-2">
     <button (click)="reorderClickHandler(item, 'up')"
-            class="btn btn-outline-primary"
-            [disabled]="item.disabled || item.deleted">
+            [disabled]="item.disabled || item.deleted"
+            class="btn btn-outline-primary">
       <i class="bi bi-arrow-up"></i>
     </button>
     <button (click)="reorderClickHandler(item, 'down')"
-            class="btn btn-outline-primary"
-            [disabled]="item.disabled || item.deleted">
+            [disabled]="item.disabled || item.deleted"
+            class="btn btn-outline-primary">
       <i class="bi bi-arrow-down"></i>
     </button>
     <button (click)="deleteClickHandler(item)"
-            class="btn btn-outline-danger"
-            [disabled]="item.disabled || item.deleted">
+            [disabled]="item.disabled || item.deleted"
+            class="btn btn-outline-danger">
       <i class="bi bi-bucket"></i>
     </button>
   </div>
